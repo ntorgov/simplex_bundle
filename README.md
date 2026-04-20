@@ -10,7 +10,7 @@
 ## ⚡ Быстрый старт
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ntorgov/simplex_bundle/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ntorgov/simplex_bundle/refs/heads/master/installer.sh | bash
 ```
 
 Скрипт задаст несколько вопросов (адрес сервера, порты, квота) и запустит всё автоматически.
@@ -103,19 +103,19 @@ stun:your-server.com:3478
 cd ~/simplex
 
 # Статус
-docker-compose ps
+docker compose ps
 
 # Логи всех сервисов
-docker-compose logs -f
+docker compose logs -f
 
 # Логи конкретного сервиса
-docker-compose logs -f smp-server
+docker compose logs -f smp-server
 
 # Остановить
-docker-compose down
+docker compose down
 
 # Обновить образы
-docker-compose pull && docker-compose up -d
+docker compose pull && docker compose up -d
 ```
 
 ---
@@ -157,7 +157,7 @@ docker-compose pull && docker-compose up -d
 Хватит IP. Укажите просто IP-адрес сервера при установке.
 
 **Что с push-уведомлениями?**  
-Push-уведомления в SimpleX реализованы через серверы simplex.im. Если они недоступны — переключите в приложении режим на **"Периодически"**: приложение будет само опрашивать ваш SMP-сервер без обращения к сторонним серверам.
+Push-уведомления в SimpleX реализованы через серверы simplex.im. Если они недоступны — переключите в приложении режим на **«Периодически»**: приложение будет само опрашивать ваш SMP-сервер без обращения к сторонним серверам.
 
 **Как узнать fingerprint моего SMP сервера?**
 ```bash
