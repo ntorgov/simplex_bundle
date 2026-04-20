@@ -10,7 +10,7 @@
 ## ⚡ Быстрый старт
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ntorgov/simplex_bundle/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ntorgov/simplex_bundle/master/install.sh | bash
 ```
 
 Скрипт задаст несколько вопросов (адрес сервера, порты, квота) и запустит всё автоматически.
