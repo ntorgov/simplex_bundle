@@ -291,8 +291,22 @@ print_summary() {
 
   cd "$INSTALL_DIR"
 
-  # Получаем адрес SMP сервера
-  SMP_ADDR=$("${DOCKER_CMD[@]}" logs simplex-smp 2>&1 | grep -i "server address" | tail -1 | awk '{print $NF}' || true)
+  # Нормализуем адрес сервера под внешний HOST:PORT.
+  normalize_server_addr() {
+    local raw_addr="$1"
+    local external_host="$2"
+    local external_port="$3"
+    echo "$raw_addr" | sed -E "s#@[^:/?]+(:[0-9]+)?#@${external_host}:${external_port}#"
+  }
+
+  # Получаем адреса SMP/XFTP из логов
+  SMP_ADDR_RAW=$("${DOCKER_CMD[@]}" logs simplex-smp 2>&1 | grep -i "server address" | tail -1 | awk '{print $NF}' || true)
+  XFTP_ADDR_RAW=$("${DOCKER_CMD[@]}" logs simplex-xftp 2>&1 | grep -i "server address" | tail -1 | awk '{print $NF}' || true)
+
+  SMP_ADDR=""
+  XFTP_ADDR=""
+  [ -n "$SMP_ADDR_RAW" ] && SMP_ADDR="$(normalize_server_addr "$SMP_ADDR_RAW" "$SERVER_ADDR" "$SMP_PORT")"
+  [ -n "$XFTP_ADDR_RAW" ] && XFTP_ADDR="$(normalize_server_addr "$XFTP_ADDR_RAW" "$SERVER_ADDR" "$XFTP_PORT")"
 
   echo ""
   echo -e "${GREEN}${BOLD}  ✓ SimpleX серверы запущены!${NC}"
@@ -310,13 +324,17 @@ print_summary() {
     echo -e "  ${CYAN}  $SMP_ADDR${NC}"
   else
     echo -e "  ${CYAN}  smp://<fingerprint>@${SERVER_ADDR}:${SMP_PORT}${NC}"
-    print_info "Точный адрес: docker logs simplex-smp | grep 'Server address'"
+    print_info "Точный адрес: ${DOCKER_CMD[*]} logs simplex-smp | grep 'Server address'"
   fi
 
   echo ""
   echo -e "  ${BOLD}│  XFTP сервер:${NC}"
-  echo -e "  ${CYAN}  xftp://<fingerprint>@${SERVER_ADDR}:${XFTP_PORT}${NC}"
-  print_info "Точный адрес: docker logs simplex-xftp | grep 'Server address'"
+  if [ -n "$XFTP_ADDR" ]; then
+    echo -e "  ${CYAN}  $XFTP_ADDR${NC}"
+  else
+    echo -e "  ${CYAN}  xftp://<fingerprint>@${SERVER_ADDR}:${XFTP_PORT}${NC}"
+    print_info "Точный адрес: ${DOCKER_CMD[*]} logs simplex-xftp | grep 'Server address'"
+  fi
 
   echo ""
   echo -e "  ${BOLD}│  TURN серверы (WebRTC → голос):${NC}"
