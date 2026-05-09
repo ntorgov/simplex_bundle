@@ -58,6 +58,7 @@ check_deps() {
   print_step "1/5" "Проверка зависимостей"
 
   local missing=()
+  local compose_mode=""
 
   if ! command -v docker &>/dev/null; then
     missing+=("docker")
@@ -66,10 +67,10 @@ check_deps() {
   fi
 
   if command -v docker-compose &>/dev/null; then
-    COMPOSE_CMD="docker-compose"
+    compose_mode="standalone"
     print_ok "docker-compose найден"
   elif docker compose version &>/dev/null 2>&1; then
-    COMPOSE_CMD="docker compose"
+    compose_mode="plugin"
     print_ok "docker compose (plugin) найден"
   else
     missing+=("docker-compose")
@@ -87,6 +88,30 @@ check_deps() {
     echo ""
     echo -e "  Установите Docker: ${CYAN}https://docs.docker.com/engine/install/${NC}"
     exit 1
+  fi
+
+  # Проверяем доступ к Docker API. Если сокет недоступен, используем sudo.
+  if docker info &>/dev/null; then
+    DOCKER_CMD=(docker)
+    if [ "$compose_mode" = "standalone" ]; then
+      COMPOSE_CMD=(docker-compose)
+    else
+      COMPOSE_CMD=(docker compose)
+    fi
+  else
+    if ! command -v sudo &>/dev/null; then
+      print_error "Нет доступа к Docker API и sudo не найден"
+      print_info "Добавьте пользователя в группу docker или запустите скрипт от root"
+      exit 1
+    fi
+
+    print_warn "Нет доступа к /var/run/docker.sock, команды Docker будут выполнены через sudo"
+    DOCKER_CMD=(sudo docker)
+    if [ "$compose_mode" = "standalone" ]; then
+      COMPOSE_CMD=(sudo docker-compose)
+    else
+      COMPOSE_CMD=(sudo docker compose)
+    fi
   fi
 }
 
@@ -173,8 +198,6 @@ create_files() {
 
   # docker-compose.yml
   cat > docker-compose.yml << EOF
-version: "3.8"
-
 services:
   smp-server:
     image: simplexchat/smp-server:latest
@@ -248,13 +271,13 @@ start_services() {
   cd "$INSTALL_DIR"
 
   # Удаляем старый контейнер если был
-  docker rm -f simplex-server 2>/dev/null || true
+  "${DOCKER_CMD[@]}" rm -f simplex-server 2>/dev/null || true
 
   print_info "Скачивание образов..."
-  $COMPOSE_CMD pull
+  "${COMPOSE_CMD[@]}" pull
 
   print_info "Запуск контейнеров..."
-  $COMPOSE_CMD up -d
+  "${COMPOSE_CMD[@]}" up -d
 
   # Ждём инициализации
   print_info "Ожидание инициализации (10 сек)..."
@@ -269,13 +292,13 @@ print_summary() {
   cd "$INSTALL_DIR"
 
   # Получаем адрес SMP сервера
-  SMP_ADDR=$(docker logs simplex-smp 2>&1 | grep -i "server address" | tail -1 | awk '{print $NF}' || true)
+  SMP_ADDR=$("${DOCKER_CMD[@]}" logs simplex-smp 2>&1 | grep -i "server address" | tail -1 | awk '{print $NF}' || true)
 
   echo ""
   echo -e "${GREEN}${BOLD}  ✓ SimpleX серверы запущены!${NC}"
   echo ""
   echo -e "  ${BOLD}Статус контейнеров:${NC}"
-  $COMPOSE_CMD ps
+  "${COMPOSE_CMD[@]}" ps
   echo ""
 
   echo -e "  ${BOLD}┌─────────────────────────────────────────────────────────────────┐${NC}"
@@ -305,9 +328,9 @@ print_summary() {
   echo ""
   echo -e "  ${BOLD}Управление:${NC}"
   echo -e "  ${DIM}cd ${INSTALL_DIR}${NC}"
-  echo -e "  ${DIM}${COMPOSE_CMD} logs -f        # логи${NC}"
-  echo -e "  ${DIM}${COMPOSE_CMD} down            # остановить${NC}"
-  echo -e "  ${DIM}${COMPOSE_CMD} pull && ${COMPOSE_CMD} up -d  # обновить${NC}"
+  echo -e "  ${DIM}${COMPOSE_CMD[*]} logs -f        # логи${NC}"
+  echo -e "  ${DIM}${COMPOSE_CMD[*]} down            # остановить${NC}"
+  echo -e "  ${DIM}${COMPOSE_CMD[*]} pull && ${COMPOSE_CMD[*]} up -d  # обновить${NC}"
   echo ""
   echo -e "  ${DIM}Все credentials сохранены в: ${INSTALL_DIR}/credentials.txt${NC}"
   echo ""
