@@ -160,9 +160,23 @@ collect_params() {
   TURN_PORT="${TURN_PORT:-3478}"
 
   # Квота XFTP
-  echo -en "  ${BOLD}Квота хранилища XFTP${NC} ${DIM}(для файлов)${NC} [10gb]: "
-  read -r XFTP_QUOTA < "$input_source"
-  XFTP_QUOTA="${XFTP_QUOTA:-10gb}"
+  while true; do
+    echo -en "  ${BOLD}Квота хранилища XFTP${NC} ${DIM}(для файлов)${NC} [10gb]: "
+    read -r XFTP_QUOTA < "$input_source"
+    XFTP_QUOTA="${XFTP_QUOTA:-10gb}"
+
+    # Удобный ввод: "3" -> "3gb"
+    if [[ "$XFTP_QUOTA" =~ ^[0-9]+$ ]]; then
+      XFTP_QUOTA="${XFTP_QUOTA}gb"
+    fi
+
+    # Требуем формат вида Ngb
+    if [[ "$XFTP_QUOTA" =~ ^[1-9][0-9]*gb$ ]]; then
+      break
+    fi
+
+    print_warn "Неверный формат квоты. Используйте: 1gb, 10gb, 100gb"
+  done
 
   # Генерация пароля TURN
   TURN_PASS=$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)
