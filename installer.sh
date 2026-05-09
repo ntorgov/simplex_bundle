@@ -154,7 +154,10 @@ collect_params() {
   echo ""
   echo -n "  Продолжить? [Y/n]: "
   read -r confirm < "$input_source"
-  [[ "$confirm" =~ ^[Nn] ]] && echo "Отменено." && exit 0
+  if [[ "$confirm" =~ ^[Nn] ]]; then
+    echo "Отменено."
+    exit 0
+  fi
 }
 
 # ── Создание файлов ────────────────────────────────────────
