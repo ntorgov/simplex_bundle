@@ -96,6 +96,11 @@ collect_params() {
   print_step "2/5" "Настройка параметров"
   echo ""
 
+  local input_source="/dev/stdin"
+  if [ -r /dev/tty ]; then
+    input_source="/dev/tty"
+  fi
+
   # Адрес сервера
   local default_addr=""
   if command -v hostname &>/dev/null; then
@@ -104,34 +109,34 @@ collect_params() {
 
   while true; do
     if [ -n "$default_addr" ]; then
-      echo -e "  ${BOLD}Адрес сервера${NC} ${DIM}(домен или IP)${NC} [${default_addr}]: "
+      echo -en "  ${BOLD}Адрес сервера${NC} ${DIM}(домен или IP)${NC} [${default_addr}]: "
     else
-      echo -e "  ${BOLD}Адрес сервера${NC} ${DIM}(домен или IP)${NC}: "
+      echo -en "  ${BOLD}Адрес сервера${NC} ${DIM}(домен или IP)${NC}: "
     fi
-    read -r SERVER_ADDR
+    read -r SERVER_ADDR < "$input_source"
     SERVER_ADDR="${SERVER_ADDR:-$default_addr}"
     [ -n "$SERVER_ADDR" ] && break
     print_warn "Адрес не может быть пустым"
   done
 
   # Порт SMP
-  echo -e "  ${BOLD}Порт SMP${NC} ${DIM}(relay, рекомендуем 993 для обхода блокировок)${NC} [993]: "
-  read -r SMP_PORT
+  echo -en "  ${BOLD}Порт SMP${NC} ${DIM}(relay, рекомендуем 993 для обхода блокировок)${NC} [993]: "
+  read -r SMP_PORT < "$input_source"
   SMP_PORT="${SMP_PORT:-993}"
 
   # Порт XFTP
-  echo -e "  ${BOLD}Порт XFTP${NC} ${DIM}(файлы, рекомендуем 995)${NC} [995]: "
-  read -r XFTP_PORT
+  echo -en "  ${BOLD}Порт XFTP${NC} ${DIM}(файлы, рекомендуем 995)${NC} [995]: "
+  read -r XFTP_PORT < "$input_source"
   XFTP_PORT="${XFTP_PORT:-995}"
 
   # Порт TURN
-  echo -e "  ${BOLD}Порт TURN${NC} ${DIM}(голосовые звонки)${NC} [3478]: "
-  read -r TURN_PORT
+  echo -en "  ${BOLD}Порт TURN${NC} ${DIM}(голосовые звонки)${NC} [3478]: "
+  read -r TURN_PORT < "$input_source"
   TURN_PORT="${TURN_PORT:-3478}"
 
   # Квота XFTP
-  echo -e "  ${BOLD}Квота хранилища XFTP${NC} ${DIM}(для файлов)${NC} [10gb]: "
-  read -r XFTP_QUOTA
+  echo -en "  ${BOLD}Квота хранилища XFTP${NC} ${DIM}(для файлов)${NC} [10gb]: "
+  read -r XFTP_QUOTA < "$input_source"
   XFTP_QUOTA="${XFTP_QUOTA:-10gb}"
 
   # Генерация пароля TURN
@@ -148,7 +153,7 @@ collect_params() {
   echo -e "  ${DIM}└─────────────────────────────────────────┘${NC}"
   echo ""
   echo -n "  Продолжить? [Y/n]: "
-  read -r confirm
+  read -r confirm < "$input_source"
   [[ "$confirm" =~ ^[Nn] ]] && echo "Отменено." && exit 0
 }
 
